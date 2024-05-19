@@ -1,0 +1,178 @@
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState } = React
+
+        const Productos = [
+            {id: 1, producto: 'Pepsi', cantidad: '12', codigo: '3463532567'},
+            {id: 2, producto: 'Manaos', cantidad: '3', codigo: '4554663223'},
+            {id: 3, producto: 'Levite', cantidad: '1', codigo: '5779900888'},
+            {id: 4, producto: 'Coca Cola', cantidad: '6', codigo: '6767677544'}
+        ]
+        
+        function Editar({ gaseosa, alGuardar, alCancelar }) {
+            let [producto, setProducto] = useState(gaseosa.producto)
+            let [cantidad, setCantidad] = useState(gaseosa.cantidad)
+            let [codigo, setCodigo] = useState(gaseosa.codigo)
+            let [error, setError] = useState(false)
+
+            const cambiarProducto = e => {
+                setProducto(e.target.value)
+                setError(false)
+            }
+            const cambiarCantidad = e => {
+                setCantidad(e.target.value)
+                setError(false)
+            }
+            const cambiarCodigo = e => {
+                setCodigo(e.target.value)
+                setError(false)
+            }
+
+            const guardar = e => {
+                e.preventDefault()
+                if (producto.trim() === '' || cantidad.trim() === '' || codigo.trim() === '') {
+                    setError(true)
+                    return
+                }
+                alGuardar({ ...gaseosa, producto, cantidad, codigo })
+            }
+            const cancelar = e => {
+                e.preventDefault()
+                alCancelar()
+            }
+            return <>
+                <form className="panel">
+                    <label>Producto</label>
+                    <input type="text" value={producto} onChange={cambiarProducto} />
+
+                    <label>Cantidad</label>
+                    <input type="text" value={cantidad} onChange={cambiarCantidad} />
+
+                    <label>Codigo</label>
+                    <input type="text" value={codigo} onChange={cambiarCodigo} />
+                    {error && <p className="error">Todos los campos son obligatorios</p>}
+                    <div className="acciones">
+                        <button onClick={guardar}>Guardar</button>
+                        <button onClick={cancelar}>Cancelar</button>
+                    </div>
+                </form>
+            </>
+        }
+
+        function Mostrar({ gaseosa, alEditar, alBorrar }) {
+            const editar = (e) => alEditar()
+            const borrar = (e) => alBorrar()
+            return <>
+                <div className="panel">
+                    <p><strong>Producto:</strong> {gaseosa.producto}</p>
+                    <p><strong>Cantidad:</strong> {gaseosa.cantidad}</p>
+                    <p><strong>Codigo:</strong> {gaseosa.codigo}</p>
+                    <div className="acciones">
+                        <button onClick={editar}>Editar</button>
+                        <button onClick={borrar}>Borrar</button>
+                    </div>
+                </div>
+            </>
+        }
+       
+        function Agenda({gaseosas, alAgregar, alEditar, alBorrar}){
+            if(gaseosas.length === 0)
+                return <h1>Sin productos</h1>
+
+            return <>
+                <h1>Control Depósito</h1>
+                <button onClick={()=>alAgregar()}>Agregar</button>
+                
+                {gaseosas.map(gaseosa => 
+                 <Mostrar key={gaseosa.id} gaseosa={gaseosa} 
+                   alEditar={()=>alEditar(gaseosa.id)}
+                   alBorrar={()=>alBorrar(gaseosa.id)}/>
+                )}
+
+                    
+           </>
+        }
+
+        function ordenAlfabetico(a, b) {
+         // Compara los productos alfabéticamente
+         if (a.producto < b.producto) {
+         return -1;
+         }
+         if (a.producto > b.producto) {
+         return 1;
+         }
+         // Si los productos son iguales, no hay cambios en el orden
+         return 0;
+        }
+        
+
+        function App() {
+            let [gaseosa, setgaseosa] = useState({})
+            let [editando, setEditando] = useState(false)
+            let [gaseosas, setgaseosas] = useState(Productos)
+
+            const guardar = (gaseosa) => {
+                if(gaseosa.id){
+                    // Modificacion
+                    let copia = gaseosas.map(c => c.id === gaseosa.id ? gaseosa : c)
+                    setgaseosas(copia)
+                } else {
+                    // Alta 
+                    let id = Math.max(...gaseosas.map(c => c.id)) + 1
+                    let copia = [...gaseosas, {...gaseosa, id}]
+                    setgaseosas(copia)
+                }
+                setEditando(false)
+            }
+
+            const cancelar = () => {
+                setgaseosa({})
+                setEditando(false)
+                console.log("Cancelar")
+            }
+
+            const agregar = () => {
+                setgaseosa({})
+                setEditando(true)
+            }
+
+            const editar = (id) => {
+                let gaseosa = gaseosas.find(c => c.id === id)
+                setgaseosa(gaseosa)
+                setEditando(true)
+            }
+
+            const borrar = (id) => {
+                // Baja
+                let copia = gaseosas.filter(c => c.id !== id)
+                setgaseosas(copia)
+            }
+
+            gaseosas.sort(ordenAlfabetico)
+            return <>
+                {editando
+                    ? <Editar gaseosa={gaseosa} alGuardar={guardar} alCancelar={cancelar} />
+                    : <Agenda gaseosas={gaseosas} 
+                            alAgregar={agregar}
+                            alEditar={editar} 
+                            alBorrar={borrar}/>
+                }
+            </>
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'))
+        root.render(<App />);
+    </script>
+</body>
+
+</html>
